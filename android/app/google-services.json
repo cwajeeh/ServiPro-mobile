@@ -1,0 +1,78 @@
+{
+  "project_info": {
+    "project_number": "160380363975",
+    "project_id": "servisca-fdeaa",
+    "storage_bucket": "servisca-fdeaa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160380363975:android:b819a4ea7dfd2d1d570ae2",
+        "android_client_info": {
+          "package_name": "com.facilcod.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "160380363975-e79sde34ehm2n0nmf334ul84m9co8gba.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.facilcod.app",
+            "certificate_hash": "80dde32ea37b5efca8ff934fb25e89ca80ed14a8"
+          }
+        },
+        {
+          "client_id": "160380363975-mpu3jdpi8s54qlfcsgtauhf5svjml0ll.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.facilcod.app",
+            "certificate_hash": "6bed4e90170a95b1a35e70ab1403c570a5d85e72"
+          }
+        },
+        {
+          "client_id": "160380363975-p7tf1r1j037dbemuhv8nnn4nqdg5j1fv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.facilcod.app",
+            "certificate_hash": "8a15039166b1f86f11c1f9e6154936ae12646499"
+          }
+        },
+        {
+          "client_id": "160380363975-u2nh8c3ralv02gr3ltlsgd0qk9ikf4qh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.facilcod.app",
+            "certificate_hash": "287fb45a70d3fc544a82e78601fce65125c1d6e7"
+          }
+        },
+        {
+          "client_id": "160380363975-nef7bmeml3hkp9cd0nfgm45pb04c9c5i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfr8q58Q8a9VnFG91VPBQcyWvzbfuk-2Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "160380363975-nef7bmeml3hkp9cd0nfgm45pb04c9c5i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "160380363975-ijs7n4ervmgn6lovrqf8ti9k6oh30agt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.facilcod.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

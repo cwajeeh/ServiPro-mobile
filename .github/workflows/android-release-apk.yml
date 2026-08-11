@@ -1,0 +1,85 @@
+# Build a signed release APK for internal / sideload distribution (not Google Play).
+# Requires a committed `android/` tree (React Native CLI). Signing uses Gradle properties below.
+#
+# Required repository secrets:
+#   ANDROID_KEYSTORE_BASE64 — base64 of your keystore (e.g. release-upload.keystore)
+#   ANDROID_KEYSTORE_PASSWORD — keystore password
+#   ANDROID_KEY_ALIAS       — key alias inside the keystore
+#   ANDROID_KEY_PASSWORD    — key password (often same as keystore password)
+#
+# Optional:
+#   GOOGLE_MAPS_API_KEY — written to `.env` for release bundle if set
+#
+# Repository variables (Settings → Secrets and variables → Actions → Variables), optional:
+#   API_URL — default https://api.servisca.co.uk
+#   MEDIA_BASE_URL — default https://servisca-app.s3.eu-west-2.amazonaws.com
+#
+# Create the keystore locally once:
+#   keytool -genkeypair -v -keystore release-upload.keystore -alias YOUR_ALIAS -keyalg RSA -keysize 2048 -validity 10000
+# Encode for the secret:
+#   base64 -i release-upload.keystore | pbcopy   # macOS
+#
+name: Android release (APK)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Write .env for release bundle
+        run: |
+          echo "API_URL=${{ vars.API_URL || 'https://api.servisca.co.uk' }}" >> .env
+          echo "MEDIA_BASE_URL=${{ vars.MEDIA_BASE_URL || 'https://servisca-app.s3.eu-west-2.amazonaws.com' }}" >> .env
+          if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
+            echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
+          fi
+
+      - name: Decode keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing secret ANDROID_KEYSTORE_BASE64"; exit 1; }
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release-upload.keystore
+
+      - name: Build release APK
+        working-directory: android
+        env:
+          ORG_GRADLE_PROJECT_SERVISCA_RELEASE_STORE_FILE: release-upload.keystore
+          ORG_GRADLE_PROJECT_SERVISCA_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_SERVISCA_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_SERVISCA_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          export NODE_BINARY="$(command -v node)"
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error

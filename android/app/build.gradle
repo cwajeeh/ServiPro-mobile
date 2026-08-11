@@ -1,0 +1,99 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+
+apply from: new File(
+  ["node", "--print", "require('path').dirname(require.resolve('react-native-config/package.json'))"]
+    .execute(null, rootDir)
+    .text
+    .trim(),
+  "android/dotenv.gradle"
+)
+
+react {
+    autolinkLibrariesWithApp()
+}
+
+def enableProguardInReleaseBuilds = false
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+// Prefer the machine-wide debug keystore (Firebase SHA-1 docs); fall back to app/debug.keystore if missing.
+def userDebugKeystore = file("${System.getProperty('user.home')}/.android/debug.keystore")
+def projectDebugKeystore = file("${projectDir}/debug.keystore")
+def debugKeystoreFile = userDebugKeystore.exists() ? userDebugKeystore : projectDebugKeystore
+if (!debugKeystoreFile.exists()) {
+    throw new GradleException(
+        "No Android debug keystore found.\n" +
+            "Either:\n" +
+            "  A) Build once from Android Studio (creates ~/.android/debug.keystore), or\n" +
+            "  B) Run:\n" +
+            "     keytool -genkeypair -v -keystore ${projectDir}/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname \"CN=Android Debug,O=Android,C=US\"\n"
+    )
+}
+
+// Web OAuth client (client_type 3) — same as default_web_client_id. Lets Google Sign-In request an ID token
+// when GOOGLE_WEB_CLIENT_ID is omitted from .env (react-native-config).
+def firebaseWebClientId = ""
+def googleServicesJson = file("google-services.json")
+if (googleServicesJson.exists()) {
+    try {
+        def parsed = new groovy.json.JsonSlurper().parse(googleServicesJson)
+        parsed.client?.each { client ->
+            client.oauth_client?.each { oc ->
+                if (oc.client_type == 3 && oc.client_id) {
+                    firebaseWebClientId = oc.client_id.toString()
+                }
+            }
+        }
+    } catch (Exception e) {
+        println("servisca: could not read Web client ID from google-services.json: ${e.message}")
+    }
+}
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    namespace 'com.facilcod.app'
+    defaultConfig {
+        applicationId 'com.facilcod.app'
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "0.0.1"
+        if (firebaseWebClientId) {
+            buildConfigField "String", "GOOGLE_WEB_CLIENT_ID_FIREBASE", "\"${firebaseWebClientId}\""
+        }
+    }
+    signingConfigs {
+        debug {
+            storeFile debugKeystoreFile
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+dependencies {
+    implementation("com.facebook.react:react-android")
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+}
+
+apply plugin: 'com.google.gms.google-services'
